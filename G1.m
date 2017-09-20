@@ -18,16 +18,23 @@ function [ command, time ] = G1(x, y, z, vel, relative)
 
 	global CURRENT_POS;
 	global CURRENT_SPEED;
+	commands = {};
 	
+	% If relative isn't specified, set it to false
 	if nargin < 5
 		relative = false;
 	end
 	
+	% If vel isn't specified, set it to the current global speed
 	if nargin < 4
 		vel = CURRENT_SPEED;
 	end
+	
+	% Must add commands to cell array in order of sending
+	commands{1} = '1HQ9'; % Wait for queue to have 9 open slots
 
-	% Use defaults for parameters not specified
+	% Use defaults for empty parameters.
+	% This is important to the way G-Code works.
 	pos = CURRENT_POS;
 	if ~isempty(x)
 		pos(1) = x;
@@ -35,24 +42,19 @@ function [ command, time ] = G1(x, y, z, vel, relative)
 	if ~isempty(y)
 		pos(2) = y;
 	end
-	if ~isempty(z) && z ~= CURRENT_POS(3)
-		zVel = sprintf('3WS;3VA%0.5f;', vel);
+	if ~isempty(z)
 		pos(3) = z;
-		if relative
-			zMove = sprintf('3PR%0.5f;', -z);
-		else
-			zMove = sprintf('3PA%0.5f;', -z);
-		end
-	else
-		zVel = '';
-		zMove = '';
 	end
 	
+	% A bit more logic around vel since it might not send a command
 	if ~isempty(vel) && vel ~= CURRENT_SPEED
-		groupVelocity = sprintf('1HV%0.5f;', vel);
+		commands{2} = sprintf('1HV%0.5f', vel); % Group velocity
+		commands{3} = sprintf('1HL%0.5f,%0.5f', -pos(1:2)); % Group move
+		commands{4} = sprintf('3VA%0.5f', vel); % Axis velocity
+		CURRENT_SPEED = vel;
 	else
 		vel = CURRENT_SPEED;
-		groupVelocity = '';
+		commands{2} = sprintf('1HL%0.5f,%0.5f', -pos(1:2)); % Group move
 	end
 	
 	% Manage relative coordinates
@@ -67,11 +69,13 @@ function [ command, time ] = G1(x, y, z, vel, relative)
 	% d = r * t  -->  t = d / r
 	dist = norm(relPos);
 	time = dist / vel;
-
-	groupMove = sprintf('1HL%0.5f,%0.5f;', pos(1:2));
-	ping = ''; %	'1HQ?;';
 	
-	command = strcat(zVel, zMove, groupVelocity, groupMove, ping);
+	if (CURRENT_POS(3) ~= pos(3))
+		commands{length(commands) + 1} = sprintf('3PA%0.5f', -pos(3)); % Axis move
+	end
+	
+	command = strjoin(commands(2:length(commands)), ';');
+%	command = strcat(wait, groupVelocity, groupMove, axisVelocity, axisMove);
 	
 	% Assemble command without trajectory mode and groups. Deprecated.
 	

@@ -25,11 +25,14 @@
 		try
 			ESP.Timeout = 1;
 		end % Don't care if fails.
-		Send('AB;'); % Abort motion. Does nothing if fails.
-		Send('RS;'); % Reset
+		Send('AB'); % Abort motion. Does nothing if fails.
+		Send('RS'); % Reset
 	end
 
-	flushinput(ESP);
+	try
+		flushinput(ESP);
+	end
+	
 	ESP = [];
 
 	allInstruments = instrfind;

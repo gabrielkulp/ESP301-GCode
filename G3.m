@@ -1,5 +1,5 @@
 function [ command, time ] = G3(x, y, a, vel)
-%G2 Moves in an arc around the specified coordinates.
+%G3 Moves in an arc around the specified coordinates.
 % Moves the motors to follow an arc with center (x, y) and ccw angle a.
 %
 % Usage:
@@ -16,13 +16,23 @@ function [ command, time ] = G3(x, y, a, vel)
 
 	global CURRENT_POS;
 	global CURRENT_SPEED;
+	z = CURRENT_POS(3); % Save for later
+	commands = {};
+	
+	if a == 0
+		command = '';
+		time = 0;
+		return
+	end
+	
+	commands{1} = '1HQ9'; % Wait for queue to have 9 open slots
 
 	% Parse
 	if nargin == 4 && ~isempty(vel) && vel ~= CURRENT_SPEED
-		groupVelocity = sprintf('1HV%0.5f;', vel);
+		commands{2} = sprintf('1HV%0.5f', vel); % Group velocity
+		CURRENT_SPEED = vel;
 	else
 		vel = CURRENT_SPEED;
-		groupVelocity = '';
 	end
 	
 	center = [x, y];
@@ -34,13 +44,15 @@ function [ command, time ] = G3(x, y, a, vel)
 	dist = (a/360) * 2 * pi * norm(radius);
 	time = dist / vel;
 
-	groupMove = sprintf('1HC%0.5f,%0.5f,%0.5f;', center, a);
-	ping = ''; %	'1HQ?;';
+	commands{length(commands) + 1} =...
+		sprintf('1HC%0.5f,%0.5f,%0.5f', -center(1:2), a); % Group move
 	
-	command = strcat(groupVelocity, groupMove, ping);
+	
+	command = strjoin(commands(2:length(commands)), ';');
 	
 	% Calculate final position
-	CURRENT_POS = ([cosd(a), -sind(a); sind(a), cosd(a)] * radius') + center;
+	CURRENT_POS = ([cosd(a), -sind(a); sind(a), cosd(a)] * radius')' + center;
+	CURRENT_POS(3) = z;
 	
 end
 

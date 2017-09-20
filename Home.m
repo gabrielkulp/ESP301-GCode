@@ -17,8 +17,11 @@ function Home()
 	Group(false); % Remove group
 
 	% Query is set velocities, set target positions, wait stop, ask position.
-	Query('1VA20;2VA20;3VA20;1MT-;2MT-;3MT+;1WS;2WS;3WS;1TP?', false, 30);
+	%Query('1VA20;2VA20;3VA20;1MT-;2MT-;3MT+;1WS;2WS;3WS;1TP?', false, 30);
+	Query('1OR;2OR;3OR;3WS;1TP?', false, 30);
 	pause(1); % Let it settle
+	Query('3PA60;3WS;3TP', false, 10);
+	pause(1);
 	Send('1DH;2DH;3DH'); % Set as origin
 	CURRENT_POS = [0,0,0];
 

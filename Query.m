@@ -1,19 +1,23 @@
-function response = Query(message, isString, timeout)
+function response = Query(message, isString, timeout, noLog)
 %QUERY Sends a message to the connected ESP device and awaits a response.
 % This function lets you specify if you expect a string or numeric
 % response, and automatically collects multiple responses.
 %
 % Usage:
-% response = Query(message, [isString], [timeout]);
+% response = Query(message, [isString], [timeout], [noLog]);
 %
 % message is a character vector or string of the ASCII to send the ESP.
 % isString is an optional flag. When true, the response is not parsed for
 %	numbers and multiple responses are returned in a cell array. When
 %	false, responses are parsed for numbers and stored in an array.
 %	Defaults to false.
-% timeout is an optional argument for how long to wait ( in seconds) for a
+% timeout is an optional argument for how long to wait (in seconds) for a
 %	response before returning an empty array or cell array. Defaults to 1
 %	second.
+% noLog is an optional bool. Set to true, the query and response are not
+% 	logged locally. Set to false, they are logged as normal. Defaults to
+% 	false.
+% response is the string or cell array returned by the query.
 %
 % Gabriel Kulp, 2017 Oregon State University
 
@@ -21,6 +25,10 @@ function response = Query(message, isString, timeout)
 	if isempty(ESP)
 		response = '';
 		return;
+	end
+	
+	if (nargin < 4)
+		noLog = false;
 	end
 
 	if (nargin < 3)
@@ -42,7 +50,7 @@ function response = Query(message, isString, timeout)
 	% There shouldn't be anything in BytesAvailable right now, so clear it.
 	flushinput(ESP);
 
-	success = Send(message);
+	success = Send(message, noLog);
 
 	if ~success
 		response = '';
@@ -56,7 +64,11 @@ function response = Query(message, isString, timeout)
 
 	while (firstRead || ESP.BytesAvailable > 1)
 		responseRaw = fscanf(ESP);
-
+		responseRaw = strtrim(responseRaw);
+		if ~noLog
+			fprintf('>%s\n', responseRaw); % includes \n already
+		end
+		
 		if (~isempty(responseRaw))
 			if (isString)
 				response{length(response)+1} = responseRaw(1:length(responseRaw)-1);

@@ -19,7 +19,7 @@ function [ parsedVars ] = GParse( command, str )
 		case {'G0', 'G1'} % Linear motion
 			X = [];
 			Y = [];
-			z = [];
+			Z = [];
 			vel = [];
 
 			args = strsplit(str);
@@ -34,16 +34,16 @@ function [ parsedVars ] = GParse( command, str )
 					case 'Y'
 						Y = argNum;
 					case 'Z'
-						z = argNum;
+						Z = argNum;
 				end % ignore E for extruder
 			end
-			parsedVars = {X, Y, z, vel};
+			parsedVars = {X, Y, Z, vel};
 		case {'G2', 'G3'} % Arc motion
 			global CURRENT_POS; % Not "inefficient" since it's called once.
 			X = [];
 			Y = [];
-			I = [];
-			J = [];
+			I = 0;
+			J = 0;
 			R = [];
 			vel = [];
 			IJKMode = true;
@@ -97,7 +97,7 @@ function [ parsedVars ] = GParse( command, str )
 					A = -A; % G3 is CCW, but math is CW
 				end
 				
-				parsedVars = [center(1), center(2), A, vel];
+				parsedVars = {center(1), center(2), A, vel};
 			else
 				% This is solving a SSS triangle. Law of Cosines
 				% cos(A) = (b^2 + c^2 - a^2) / 2*b*c
@@ -126,7 +126,7 @@ function [ parsedVars ] = GParse( command, str )
 					angC = -angC;
 				end
 				
-				parsedVars = [center(1), center(2), angC, vel];
+				parsedVars = {center(1), center(2), angC, vel};
 			end
 %		end case
 	end % switch

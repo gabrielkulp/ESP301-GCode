@@ -1,4 +1,4 @@
-function [ GParams, linesRead ] = GetGLine( fid )
+function [ GCommand, GParams, linesRead ] = GetGLine( fid )
 %GETGLINE Returns the next valid line of G-Code.
 % Returns the next valid line in a G-Code file represented by the file
 % handle fid. fopen should already have been called. Returns an empty array
@@ -24,6 +24,7 @@ function [ GParams, linesRead ] = GetGLine( fid )
 		
 		if (g == -1) % End of file. Stop reading.
 			GParams = '';
+			GCommand = '';
 			return;
 		elseif isempty(g) % Line is blank. Skip to next.
 			continue;
@@ -38,9 +39,10 @@ function [ GParams, linesRead ] = GetGLine( fid )
 			continue;
 		end
 		
-		gCommand = g(1:spaces(1)-1); % Extract first characters up to space
+		GCommand = g(1:spaces(1)-1); % Extract first characters up to space
 	
-		if (strcmp(gCommand, 'G0') || strcmp(gCommand, 'G1'))
+		if (strcmp(GCommand, 'G0') || strcmp(GCommand, 'G1')...
+				|| strcmp(GCommand, 'G2') || strcmp(GCommand, 'G3'))
 			GParams = g(spaces(1)+1:length(g));
 			return;
 		else % Command isn't relevant. Skip to next.
